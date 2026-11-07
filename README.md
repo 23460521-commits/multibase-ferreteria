@@ -37,7 +37,7 @@ docker compose version
 
 ```bash
 # 1. Clonar el repositorio
-git clone <URL-DEL-REPOSITORIO>
+git clone https://github.com/23460521-commits/multibase-ferreteria.git
 cd multibase-ferreteria
 
 # 2. Instalar dependencias de Node
