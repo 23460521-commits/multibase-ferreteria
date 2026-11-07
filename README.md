@@ -16,11 +16,8 @@ Los **6 recursos** exponen `GET`, `POST`, `PATCH` y `DELETE`. El `DELETE` hace *
 
 | Nombre | Matrícula | Recursos a su cargo |
 |---|---|---|
-| Julio Alberto Orozco Téllez | 23460521 | _(completar)_ |
-| _(nombre)_ | _(matrícula)_ | _(completar)_ |
-| _(nombre)_ | _(matrícula)_ | _(completar)_ |
-
----
+| Julio Alberto Orozco Téllez | 23460521 | Estructura base, MySQL y Redis |
+| Luis Fernando Machuca Carrillo | 23460516 | MongoDB |
 
 ## 1. Requisitos
 
@@ -260,4 +257,4 @@ git log --pretty=format:"%h %an %ad %s" --date=short
 
 ## 11. Declaratoria de uso de IA
 
-_(Completar según las indicaciones de la materia: qué herramienta se usó, para qué partes del proyecto y cómo se revisó el resultado.)_
+Para el desarrollo de este proyecto se utilizó Claude (Anthropic) como apoyo en la generación de la estructura inicial del código, la configuración de Docker y la redacción de este README. El equipo revisó el código, ejecutó el proyecto localmente y probó los métodos GET, POST, PATCH y DELETE de los seis recursos, incluyendo el borrado lógico en los tres motores de base de datos.
