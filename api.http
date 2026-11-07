@@ -1,0 +1,127 @@
+### Peticiones de prueba (extensión "REST Client" de VS Code: clic en "Send Request")
+@base = http://localhost:3000/api
+
+### Estado de los tres motores
+GET {{base}}/salud
+
+########## MySQL — categorias ##########
+GET {{base}}/categorias
+
+###
+POST {{base}}/categorias
+Content-Type: application/json
+
+{ "nombre": "Tornillería", "descripcion": "Tornillos, taquetes y anclas" }
+
+###
+PATCH {{base}}/categorias/1
+Content-Type: application/json
+
+{ "descripcion": "Martillos, desarmadores, llaves, pinzas y niveles" }
+
+###
+DELETE {{base}}/categorias/5
+
+########## MySQL — productos ##########
+GET {{base}}/productos?categoria_id=1
+
+###
+GET {{base}}/productos/1
+
+###
+POST {{base}}/productos
+Content-Type: application/json
+
+{ "nombre": "Pinzas de presión 10\"", "precio": 159.90, "stock": 12, "categoria_id": 1 }
+
+###
+PATCH {{base}}/productos/1
+Content-Type: application/json
+
+{ "precio": 199.00, "stock": 30 }
+
+###
+DELETE {{base}}/productos/2
+
+### Ver también los eliminados
+GET {{base}}/productos?incluirEliminados=true
+
+########## MySQL — clientes ##########
+GET {{base}}/clientes
+
+###
+POST {{base}}/clientes
+Content-Type: application/json
+
+{ "nombre": "Ana Torres", "email": "ana.torres@example.com", "telefono": "3125550000" }
+
+###
+PATCH {{base}}/clientes/1
+Content-Type: application/json
+
+{ "telefono": "3129998877" }
+
+###
+DELETE {{base}}/clientes/2
+
+########## MongoDB — proveedores ##########
+GET {{base}}/proveedores
+
+###
+POST {{base}}/proveedores
+Content-Type: application/json
+
+{
+  "nombre": "Tornillos y Anclajes de Colima",
+  "contacto": { "nombre": "Pedro Ríos", "telefono": "3121112233" },
+  "productosSuministrados": [1, 2],
+  "etiquetas": ["tornillería", "crédito 30 días"]
+}
+
+### Sustituye <id> por un id real (24 caracteres hexadecimales)
+PATCH {{base}}/proveedores/<id>
+Content-Type: application/json
+
+{ "email": "ventas@tornilloscolima.example.com" }
+
+###
+DELETE {{base}}/proveedores/<id>
+
+########## MongoDB — resenas (valida producto y cliente en MySQL) ##########
+GET {{base}}/resenas?productoId=1
+
+###
+POST {{base}}/resenas
+Content-Type: application/json
+
+{ "productoId": 1, "clienteId": 2, "calificacion": 4, "comentario": "Buen martillo" }
+
+###
+PATCH {{base}}/resenas/<id>
+Content-Type: application/json
+
+{ "calificacion": 5 }
+
+###
+DELETE {{base}}/resenas/<id>
+
+########## Redis — cupones (la clave es el código) ##########
+GET {{base}}/cupones
+
+###
+POST {{base}}/cupones
+Content-Type: application/json
+
+{ "codigo": "BUENFIN26", "descripcion": "Buen Fin 2026", "descuento": 15, "vigencia": "2026-11-20", "usosMaximos": 100 }
+
+###
+GET {{base}}/cupones/BUENFIN26
+
+###
+PATCH {{base}}/cupones/BUENFIN26
+Content-Type: application/json
+
+{ "descuento": 20 }
+
+###
+DELETE {{base}}/cupones/BUENFIN26
