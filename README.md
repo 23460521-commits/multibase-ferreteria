@@ -119,6 +119,11 @@ Recursos: `categorias`, `productos`, `clientes`, `proveedores`, `resenas`, `cupo
 - Filtros disponibles: `productos?categoria_id=1`, `clientes?email=...`, `proveedores?nombre=...`, `resenas?productoId=1&clienteId=2`.
 
 ### Campos de cada recurso
+### Endpoint adicional de MongoDB
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET` | `/api/resenas/resumen` | Promedio de calificación y total de reseñas por producto, calculado con el pipeline de agregación de MongoDB (`$match`, `$group`, `$sort`). No toma en cuenta las reseñas con borrado lógico. |
 
 | Recurso | Campos (* = obligatorio en POST) |
 |---|---|
