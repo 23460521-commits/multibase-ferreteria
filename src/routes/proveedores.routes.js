@@ -16,7 +16,8 @@ module.exports = rutasCrud(
       contacto: { tipo: 'object' },   // { nombre, telefono, ... }
       direccion: { tipo: 'object' },  // { calle, ciudad, cp, ... }
       productosSuministrados: { tipo: 'array', items: 'integer' }, // ids de productos en MySQL
-      etiquetas: { tipo: 'array', items: 'string' }
+      etiquetas: { tipo: 'array', items: 'string' },
+      sitioWeb: { tipo: 'string', maxLen: 200 }
     }
   })
 );
