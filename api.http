@@ -75,7 +75,8 @@ Content-Type: application/json
   "nombre": "Tornillos y Anclajes de Colima",
   "contacto": { "nombre": "Pedro Ríos", "telefono": "3121112233" },
   "productosSuministrados": [1, 2],
-  "etiquetas": ["tornillería", "crédito 30 días"]
+  "etiquetas": ["tornillería", "crédito 30 días"],
+  "sitioWeb": "https://tornilloscolima.example.com"
 }
 
 ### Sustituye <id> por un id real (24 caracteres hexadecimales)
@@ -89,7 +90,8 @@ DELETE {{base}}/proveedores/<id>
 
 ########## MongoDB — resenas (valida producto y cliente en MySQL) ##########
 GET {{base}}/resenas?productoId=1
-
+### Resumen de calificaciones por producto (agregación de MongoDB)
+GET {{base}}/resenas/resumen
 ###
 POST {{base}}/resenas
 Content-Type: application/json

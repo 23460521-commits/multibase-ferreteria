@@ -125,7 +125,7 @@ Recursos: `categorias`, `productos`, `clientes`, `proveedores`, `resenas`, `cupo
 | categorias | `nombre`*, `descripcion` |
 | productos | `nombre`*, `precio`*, `descripcion`, `stock`, `categoria_id` |
 | clientes | `nombre`*, `email`*, `telefono`, `direccion` |
-| proveedores | `nombre`*, `rfc`, `email`, `telefonos[]`, `contacto{}`, `direccion{}`, `productosSuministrados[]`, `etiquetas[]` |
+| proveedores | `nombre`*, `rfc`, `email`, `telefonos[]`, `contacto{}`, `direccion{}`, `productosSuministrados[]`, `etiquetas[]`, `sitioWeb` |
 | resenas | `productoId`*, `clienteId`*, `calificacion`* (1–5), `comentario` |
 | cupones | `codigo`*, `descuento`* (1–100 %), `descripcion`, `vigencia` (fecha ISO), `usosMaximos` |
 
