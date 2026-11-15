@@ -2,4 +2,9 @@
 const rutasCrud = require('./rutasCrud');
 const controlador = require('../controllers/cupones.controller');
 
-module.exports = rutasCrud(controlador, 'codigo');
+const router = rutasCrud(controlador, 'codigo');
+
+// Canje de un cupón: revisa la vigencia y cuenta los usos con INCR.
+router.post('/:codigo/canjear', controlador.canjear);
+
+module.exports = router;
