@@ -84,4 +84,16 @@ function crearControladorMySQL({ tabla, etiqueta, esquema, filtros = [], validar
   };
 }
 
-module.exports = { crearControladorMySQL, existeActivoMySQL };
+// Devuelve los ids de la lista que NO existen en la tabla o que tienen borrado lógico.
+async function idsInexistentesMySQL(tabla, ids) {
+  const unicos = [...new Set(ids)];
+  if (unicos.length === 0) return [];
+  const [filas] = await pool.query(
+    'SELECT id FROM ?? WHERE id IN (?) AND eliminado = 0',
+    [tabla, unicos]
+  );
+  const encontrados = new Set(filas.map((f) => f.id));
+  return unicos.filter((id) => !encontrados.has(id));
+}
+
+module.exports = { crearControladorMySQL, existeActivoMySQL, idsInexistentesMySQL };

@@ -45,7 +45,9 @@ CREATE TABLE IF NOT EXISTS clientes (
   eliminado      TINYINT(1)   NOT NULL DEFAULT 0,
   creado_en      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   actualizado_en DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  eliminado_en   DATETIME     NULL
+  eliminado_en   DATETIME     NULL,
+  -- Un correo no se puede repetir (tampoco el de un cliente con borrado lógico)
+  CONSTRAINT uq_clientes_email UNIQUE (email)
 ) ENGINE=InnoDB;
 
 -- Datos de ejemplo

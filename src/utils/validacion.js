@@ -18,7 +18,9 @@ const tipos = {
  * - Rechaza campos que no estén en el esquema (por ejemplo id o eliminado).
  * - En modo parcial (PATCH) ningún campo es obligatorio, pero debe venir al menos uno.
  *
- * Reglas por campo: { tipo, requerido, min, max, maxLen, enum, items }
+ * Reglas por campo: { tipo, requerido, nulo, min, max, maxLen, enum, items }
+ *   nulo: false  -> el campo es opcional, pero si se envía no puede ser null
+ *                   (para columnas NOT NULL con valor por defecto, como stock)
  */
 function validar(body, esquema, { parcial = false } = {}) {
   if (!esObjetoPlano(body)) throw new HttpError(400, 'El cuerpo debe ser un objeto JSON');
@@ -38,7 +40,7 @@ function validar(body, esquema, { parcial = false } = {}) {
       continue;
     }
     if (valor === null) {
-      if (reglas.requerido) errores.push(`El campo "${campo}" no puede ser null`);
+      if (reglas.requerido || reglas.nulo === false) errores.push(`El campo "${campo}" no puede ser null`);
       else datos[campo] = null;
       continue;
     }

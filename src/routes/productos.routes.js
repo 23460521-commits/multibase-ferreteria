@@ -12,7 +12,7 @@ module.exports = rutasCrud(
       nombre: { tipo: 'string', requerido: true, maxLen: 120 },
       descripcion: { tipo: 'string', maxLen: 255 },
       precio: { tipo: 'number', requerido: true, min: 0 },
-      stock: { tipo: 'integer', min: 0 },
+      stock: { tipo: 'integer', min: 0, nulo: false }, // columna NOT NULL
       categoria_id: { tipo: 'integer', min: 1 }
     },
     validarRelaciones: async ({ categoria_id }) => {

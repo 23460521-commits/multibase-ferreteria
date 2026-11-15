@@ -58,6 +58,15 @@ app.use((err, req, res, next) => {
   if (err.code === 'ER_CHECK_CONSTRAINT_VIOLATED') {
     return res.status(400).json({ error: 'Los datos no cumplen las restricciones de la tabla' });
   }
+  if (err.code === 'ER_BAD_NULL_ERROR') {
+    return res.status(400).json({ error: 'Un campo obligatorio de la tabla no puede ser null' });
+  }
+  if (err.code === 'ER_DUP_ENTRY') {
+    const mensaje = /uq_clientes_email/.test(err.sqlMessage || '')
+      ? 'Ya existe un cliente con ese email'
+      : 'Ya existe un registro con ese valor, que debe ser único';
+    return res.status(409).json({ error: mensaje });
+  }
   console.error(err);
   res.status(500).json({ error: 'Error interno del servidor' });
 });
