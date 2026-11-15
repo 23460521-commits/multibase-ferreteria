@@ -16,7 +16,7 @@ Los **6 recursos** exponen `GET`, `POST`, `PATCH` y `DELETE`. El `DELETE` hace *
 
 | Nombre | Matrícula | Recursos a su cargo |
 |---|---|---|
-| Julio Alberto Orozco Téllez | 23460521 | Estructura base, MySQL y Redis |
+| Julio Alberto Orozco Téllez | 23460521 | Estructura base, MySQL, MongoDB y Redis |
 | Luis Fernando Machuca Carrillo | 23460516 | MongoDB |
 
 ## 1. Requisitos
@@ -118,23 +118,25 @@ Recursos: `categorias`, `productos`, `clientes`, `proveedores`, `resenas`, `cupo
 - Agrega `?incluirEliminados=true` a cualquier `GET` de lista para ver también los registros con borrado lógico.
 - Filtros disponibles: `productos?categoria_id=1`, `clientes?email=...`, `proveedores?nombre=...`, `resenas?productoId=1&clienteId=2`.
 
-### Campos de cada recurso
-### Endpoint adicional de MongoDB
+### Endpoints adicionales
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/api/resenas/resumen` | Promedio de calificación y total de reseñas por producto, calculado con el pipeline de agregación de MongoDB (`$match`, `$group`, `$sort`). No toma en cuenta las reseñas con borrado lógico. |
+| Método | Ruta | Motor | Descripción |
+|---|---|---|---|
+| `GET` | `/api/resenas/resumen` | MongoDB | Promedio de calificación y total de reseñas por producto, calculado con el pipeline de agregación de MongoDB (`$match`, `$group`, `$sort`). No toma en cuenta las reseñas con borrado lógico. |
+| `POST` | `/api/cupones/:codigo/canjear` | Redis | Canjea un cupón: revisa que siga vigente y lleva la cuenta de usos con `INCR`, que es atómico. Si se alcanzó `usosMaximos`, responde `409`. |
+
+### Campos de cada recurso
 
 | Recurso | Campos (* = obligatorio en POST) |
 |---|---|
 | categorias | `nombre`*, `descripcion` |
-| productos | `nombre`*, `precio`*, `descripcion`, `stock`, `categoria_id` |
-| clientes | `nombre`*, `email`*, `telefono`, `direccion` |
+| productos | `nombre`*, `precio`*, `descripcion`, `stock` (no acepta `null`), `categoria_id` |
+| clientes | `nombre`*, `email`* (único), `telefono`, `direccion` |
 | proveedores | `nombre`*, `rfc`, `email`, `telefonos[]`, `contacto{}`, `direccion{}`, `productosSuministrados[]`, `etiquetas[]`, `sitioWeb` |
 | resenas | `productoId`*, `clienteId`*, `calificacion`* (1–5), `comentario` |
-| cupones | `codigo`*, `descuento`* (1–100 %), `descripcion`, `vigencia` (fecha ISO), `usosMaximos` |
+| cupones | `codigo`*, `descuento`* (1–100 %), `descripcion`, `vigencia` (fecha ISO, válida hasta el final de ese día), `usosMaximos` |
 
-Los campos `id`, `eliminado` y las fechas los controla el servidor; si se envían, la petición se rechaza con `400`.
+Los campos `id`, `eliminado` y las fechas los controla el servidor; si se envían, la petición se rechaza con `400`. En los cupones, el campo `usos` (cuántas veces se ha canjeado) también lo controla el servidor y se muestra en cada `GET`.
 
 ### Ejemplos con curl
 
@@ -159,7 +161,10 @@ curl -X POST http://localhost:3000/api/resenas \
 # Crear un cupón (Redis)
 curl -X POST http://localhost:3000/api/cupones \
   -H "Content-Type: application/json" \
-  -d '{"codigo":"BUENFIN26","descuento":15,"vigencia":"2026-11-20"}'
+  -d '{"codigo":"BUENFIN26","descuento":15,"vigencia":"2026-12-31","usosMaximos":2}'
+
+# Canjear el cupón (Redis, INCR)
+curl -X POST http://localhost:3000/api/cupones/BUENFIN26/canjear
 ```
 
 > En Windows usa Git Bash para estos comandos, o el archivo **`api.http`** con la extensión *REST Client* de VS Code, o Postman / Thunder Client.
@@ -170,10 +175,10 @@ curl -X POST http://localhost:3000/api/cupones \
 |---|---|
 | 200 | Consulta, modificación o borrado lógico correctos |
 | 201 | Registro creado |
-| 400 | JSON inválido, campos no permitidos o con tipo/valor incorrecto |
+| 400 | JSON inválido, campos no permitidos, con tipo/valor incorrecto o `null` en un campo que no lo acepta |
 | 404 | El registro no existe o ya tiene borrado lógico |
-| 409 | El código de cupón ya existe |
-| 422 | Referencia inválida (categoría, producto o cliente inexistente o eliminado) |
+| 409 | El código de cupón ya existe, el email del cliente ya está registrado o el cupón ya no tiene usos disponibles |
+| 422 | Referencia inválida (categoría, producto o cliente inexistente o eliminado) o cupón vencido |
 | 503 | `/api/salud` cuando algún motor no responde |
 
 ---
@@ -186,12 +191,22 @@ curl -X POST http://localhost:3000/api/cupones \
 | MongoDB | Campos `eliminado` y `eliminadoEn` en cada documento. `DELETE` ejecuta `updateOne(..., { $set: { eliminado: true } })`; nunca `deleteOne`. |
 | Redis | Cada cupón es un JSON en la clave `cupon:<CODIGO>` con la bandera `eliminado`. `DELETE` reescribe el valor con `eliminado: true`. No se usa `EXPIRE`/TTL porque Redis borraría la clave físicamente. |
 
-Un registro eliminado deja de aparecer en `GET`, no se puede modificar con `PATCH` y su código/clave no se reutiliza.
+Un registro eliminado deja de aparecer en `GET`, no se puede modificar con `PATCH` y su código/clave no se reutiliza. Por la misma razón, el email de un cliente eliminado tampoco puede volver a registrarse.
+
+### Uso de Redis en los cupones
+
+| Clave | Tipo | Para qué sirve |
+|---|---|---|
+| `cupon:<CODIGO>` | String (JSON) | Datos del cupón y bandera de borrado lógico |
+| `cupon:<CODIGO>:usos` | String (contador) | Número de canjes; se incrementa con `INCR`, que es atómico, así que dos canjes simultáneos nunca cuentan el mismo uso |
+| `cupones:codigos` | Set | Índice para listar todos los cupones |
+
+Al crear un cupón, el `SET ... NX` y el `SADD` al índice se envían juntos en una transacción `MULTI`/`EXEC`, para que no pueda quedar uno sin el otro.
 
 ## 6. Integración entre motores
 
 - **Reseñas (MongoDB) → productos y clientes (MySQL):** antes de crear o modificar una reseña se consulta MySQL para confirmar que `productoId` y `clienteId` existen y no están eliminados.
-- **Proveedores (MongoDB) → productos (MySQL):** `productosSuministrados` guarda ids de productos de MySQL; además, cada proveedor puede tener una estructura diferente (contacto, dirección, varios teléfonos), aprovechando el esquema flexible de MongoDB.
+- **Proveedores (MongoDB) → productos (MySQL):** `productosSuministrados` guarda ids de productos de MySQL. Antes de crear o modificar un proveedor se consulta MySQL y, si algún id no existe o está eliminado, se responde `422` indicando cuáles. Además, cada proveedor puede tener una estructura diferente (contacto, dirección, varios teléfonos), aprovechando el esquema flexible de MongoDB.
 - **Productos → categorías (MySQL):** llave foránea `categoria_id`, validada también a nivel de aplicación.
 
 ## 7. Estructura del proyecto
@@ -234,6 +249,7 @@ multibase-ferreteria/
 | `No se pudo conectar a MySQL` | Revisa `docker compose ps`; la primera vez espera ~30 s y vuelve a ejecutar `npm start`. |
 | `port is already allocated` | Cambia el puerto izquierdo en `docker-compose.yml` (p. ej. `"3308:3306"`) y el mismo valor en `.env`. |
 | Los datos de ejemplo no aparecen | Los scripts de inicio solo corren con volúmenes nuevos: `npm run db:reset`. |
+| Se puede registrar un email repetido | La base se creó con una versión anterior de `init.sql`; ejecuta `npm run db:reset` para recrearla con la restricción `UNIQUE`. |
 | Acentos mal mostrados en la consola de MySQL | Entra con `--default-character-set=utf8mb4`. |
 
 ## 10. Trabajo en equipo con Git
@@ -262,4 +278,4 @@ git log --pretty=format:"%h %an %ad %s" --date=short
 
 ## 11. Declaratoria de uso de IA
 
-Para el desarrollo de este proyecto se utilizó Claude (Anthropic) como apoyo en la generación de la estructura inicial del código, la configuración de Docker y la redacción de este README. El equipo revisó el código, ejecutó el proyecto localmente y probó los métodos GET, POST, PATCH y DELETE de los seis recursos, incluyendo el borrado lógico en los tres motores de base de datos.
+Para el desarrollo de este proyecto se utilizó Claude (Anthropic) como apoyo en la generación de la estructura inicial del código, la configuración de Docker, la redacción de este README y la implementación de correcciones y mejoras derivadas de la revisión del código. El equipo revisó el código, ejecutó el proyecto localmente y probó los métodos GET, POST, PATCH y DELETE de los seis recursos, incluyendo el borrado lógico en los tres motores de base de datos.

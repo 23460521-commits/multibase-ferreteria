@@ -40,6 +40,12 @@ Content-Type: application/json
 
 { "precio": 199.00, "stock": 30 }
 
+### Error esperado (400): stock no acepta null
+PATCH {{base}}/productos/1
+Content-Type: application/json
+
+{ "stock": null }
+
 ###
 DELETE {{base}}/productos/2
 
@@ -54,6 +60,12 @@ POST {{base}}/clientes
 Content-Type: application/json
 
 { "nombre": "Ana Torres", "email": "ana.torres@example.com", "telefono": "3125550000" }
+
+### Error esperado (409): el email ya está registrado
+POST {{base}}/clientes
+Content-Type: application/json
+
+{ "nombre": "Ana Torres", "email": "maria.lopez@example.com" }
 
 ###
 PATCH {{base}}/clientes/1
@@ -78,6 +90,12 @@ Content-Type: application/json
   "etiquetas": ["tornillería", "crédito 30 días"],
   "sitioWeb": "https://tornilloscolima.example.com"
 }
+
+### Error esperado (422): el producto 999 no existe en MySQL
+POST {{base}}/proveedores
+Content-Type: application/json
+
+{ "nombre": "Proveedor de prueba", "productosSuministrados": [1, 999] }
 
 ### Sustituye <id> por un id real (24 caracteres hexadecimales)
 PATCH {{base}}/proveedores/<id>
@@ -114,10 +132,13 @@ GET {{base}}/cupones
 POST {{base}}/cupones
 Content-Type: application/json
 
-{ "codigo": "BUENFIN26", "descripcion": "Buen Fin 2026", "descuento": 15, "vigencia": "2026-11-20", "usosMaximos": 100 }
+{ "codigo": "BUENFIN26", "descripcion": "Buen Fin 2026", "descuento": 15, "vigencia": "2026-12-31", "usosMaximos": 2 }
 
 ###
 GET {{base}}/cupones/BUENFIN26
+
+### Canjear el cupón (INCR). Con usosMaximos = 2, el tercer canje responde 409
+POST {{base}}/cupones/BUENFIN26/canjear
 
 ###
 PATCH {{base}}/cupones/BUENFIN26
