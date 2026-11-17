@@ -4,7 +4,7 @@
 const { Router } = require('express');
 const rutasCrud = require('./rutasCrud');
 const { crearControladorMongo } = require('../services/mongoCrud');
-const { existeActivoMySQL } = require('../services/mysqlCrud');
+const { existeActivoMySQL, obtenerNombresProductos } = require('../services/mysqlCrud');
 const { getDb } = require('../config/mongo');
 const { HttpError, asyncHandler } = require('../utils/errores');
 
@@ -32,7 +32,8 @@ const router = Router();
 
 // GET /api/resenas/resumen
 // Promedio de calificación y total de reseñas por producto, usando el pipeline
-// de agregación de MongoDB. Solo toma en cuenta reseñas sin borrado lógico.
+// de agregación de MongoDB y enriqueciendo los datos con el nombre del producto desde MySQL.
+// Solo toma en cuenta reseñas sin borrado lógico.
 // Se registra antes de las rutas CRUD para que "/resumen" no se confunda con "/:id".
 router.get('/resumen', asyncHandler(async (req, res) => {
   const resultado = await getDb().collection('resenas').aggregate([
@@ -47,8 +48,12 @@ router.get('/resumen', asyncHandler(async (req, res) => {
     { $sort: { promedio: -1 } }
   ]).toArray();
 
+  const productoIds = resultado.map((r) => r._id);
+  const mapaNombres = await obtenerNombresProductos(productoIds);
+
   const datos = resultado.map((r) => ({
     productoId: r._id,
+    producto: mapaNombres.get(r._id) || 'Producto no encontrado',
     promedio: Math.round(r.promedio * 10) / 10,
     totalResenas: r.totalResenas
   }));

@@ -96,4 +96,13 @@ async function idsInexistentesMySQL(tabla, ids) {
   return unicos.filter((id) => !encontrados.has(id));
 }
 
-module.exports = { crearControladorMySQL, existeActivoMySQL, idsInexistentesMySQL };
+// Obtiene un mapa de id -> nombre para una lista de productos en MySQL.
+// Útil para enriquecer consultas de otros motores (p. ej. resumen de reseñas en MongoDB).
+async function obtenerNombresProductos(ids) {
+  const unicos = [...new Set(ids)].filter((id) => Number.isInteger(id) && id > 0);
+  if (unicos.length === 0) return new Map();
+  const [filas] = await pool.query('SELECT id, nombre FROM productos WHERE id IN (?)', [unicos]);
+  return new Map(filas.map((f) => [f.id, f.nombre]));
+}
+
+module.exports = { crearControladorMySQL, existeActivoMySQL, idsInexistentesMySQL, obtenerNombresProductos };
