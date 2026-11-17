@@ -79,6 +79,12 @@ DELETE {{base}}/clientes/2
 ########## MongoDB — proveedores ##########
 GET {{base}}/proveedores
 
+### Paginación de proveedores (página 1, 2 por página)
+GET {{base}}/proveedores?pagina=1&limite=2
+
+### Paginación de proveedores (página 2, 2 por página)
+GET {{base}}/proveedores?pagina=2&limite=2
+
 ###
 POST {{base}}/proveedores
 Content-Type: application/json
@@ -90,6 +96,12 @@ Content-Type: application/json
   "etiquetas": ["tornillería", "crédito 30 días"],
   "sitioWeb": "https://tornilloscolima.example.com"
 }
+
+### Error esperado (409): RFC duplicado en proveedores (índice único NoSQL)
+POST {{base}}/proveedores
+Content-Type: application/json
+
+{ "nombre": "Distribuidora Repetida", "rfc": "TDO010101AB1" }
 
 ### Error esperado (422): el producto 999 no existe en MySQL
 POST {{base}}/proveedores
@@ -108,13 +120,21 @@ DELETE {{base}}/proveedores/<id>
 
 ########## MongoDB — resenas (valida producto y cliente en MySQL) ##########
 GET {{base}}/resenas?productoId=1
-### Resumen de calificaciones por producto (agregación de MongoDB)
+
+### Resumen de calificaciones por producto (agregación de MongoDB enriquecida con MySQL)
 GET {{base}}/resenas/resumen
+
 ###
 POST {{base}}/resenas
 Content-Type: application/json
 
 { "productoId": 1, "clienteId": 2, "calificacion": 4, "comentario": "Buen martillo" }
+
+### Error esperado (400): validación $jsonSchema de MongoDB (calificación fuera de rango 1-5)
+POST {{base}}/resenas
+Content-Type: application/json
+
+{ "productoId": 1, "clienteId": 1, "calificacion": 9, "comentario": "Calificación inválida" }
 
 ###
 PATCH {{base}}/resenas/<id>
