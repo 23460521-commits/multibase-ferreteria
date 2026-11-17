@@ -70,6 +70,13 @@ app.use((err, req, res, next) => {
       : 'Ya existe un registro con ese valor, que debe ser único';
     return res.status(409).json({ error: mensaje });
   }
+  if (err.code === 11000) {
+    const campo = err.keyPattern ? Object.keys(err.keyPattern)[0] : 'campo';
+    const mensaje = campo === 'rfc'
+      ? 'Ya existe un proveedor con ese RFC'
+      : `Ya existe un registro con ese valor en ${campo}`;
+    return res.status(409).json({ error: mensaje });
+  }
   console.error(err);
   res.status(500).json({ error: 'Error interno del servidor' });
 });

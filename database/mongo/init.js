@@ -107,3 +107,4 @@ db.resenas.insertMany([
 
 db.resenas.createIndex({ productoId: 1 });
 db.proveedores.createIndex({ nombre: 1 });
+db.proveedores.createIndex({ rfc: 1 }, { unique: true, sparse: true });

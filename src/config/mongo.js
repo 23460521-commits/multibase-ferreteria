@@ -85,6 +85,11 @@ async function inicializarEsquemasMongo(database) {
     } else {
       await database.createCollection('proveedores', { validator: validadorProveedores });
     }
+
+    // Índices de colecciones NoSQL
+    await database.collection('resenas').createIndex({ productoId: 1 });
+    await database.collection('proveedores').createIndex({ nombre: 1 });
+    await database.collection('proveedores').createIndex({ rfc: 1 }, { unique: true, sparse: true });
   } catch (err) {
     console.warn(`  [MongoDB] Advertencia al configurar validaciones $jsonSchema: ${err.message}`);
   }
