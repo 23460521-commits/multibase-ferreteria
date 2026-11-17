@@ -61,10 +61,20 @@ app.use((err, req, res, next) => {
   if (err.code === 'ER_BAD_NULL_ERROR') {
     return res.status(400).json({ error: 'Un campo obligatorio de la tabla no puede ser null' });
   }
+  if (err.code === 121) {
+    return res.status(400).json({ error: 'El documento no cumple con la validación de esquema ($jsonSchema) de MongoDB' });
+  }
   if (err.code === 'ER_DUP_ENTRY') {
     const mensaje = /uq_clientes_email/.test(err.sqlMessage || '')
       ? 'Ya existe un cliente con ese email'
       : 'Ya existe un registro con ese valor, que debe ser único';
+    return res.status(409).json({ error: mensaje });
+  }
+  if (err.code === 11000) {
+    const campo = err.keyPattern ? Object.keys(err.keyPattern)[0] : 'campo';
+    const mensaje = campo === 'rfc'
+      ? 'Ya existe un proveedor con ese RFC'
+      : `Ya existe un registro con ese valor en ${campo}`;
     return res.status(409).json({ error: mensaje });
   }
   console.error(err);

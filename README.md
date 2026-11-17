@@ -16,8 +16,8 @@ Los **6 recursos** exponen `GET`, `POST`, `PATCH` y `DELETE`. El `DELETE` hace *
 
 | Nombre | Matrícula | Recursos a su cargo |
 |---|---|---|
-| Julio Alberto Orozco Téllez | 23460521 | Estructura base, MySQL, MongoDB y Redis |
-| Luis Fernando Machuca Carrillo | 23460516 | MongoDB |
+| Julio Alberto Orozco Téllez | 23460521 | Estructura base, MySQL, Redis y endpoints de canje |
+| Luis Fernando Machuca Carrillo | 23460516 | MongoDB (esquemas $jsonSchema, agregación multibase con MySQL, paginación, índices únicos) |
 
 ## 1. Requisitos
 
@@ -117,13 +117,21 @@ Recursos: `categorias`, `productos`, `clientes`, `proveedores`, `resenas`, `cupo
 - En MySQL el `:id` es un entero; en MongoDB es un ObjectId (24 caracteres hexadecimales); en Redis es el **código del cupón** (`/api/cupones/BUENFIN26`).
 - Agrega `?incluirEliminados=true` a cualquier `GET` de lista para ver también los registros con borrado lógico.
 - Filtros disponibles: `productos?categoria_id=1`, `clientes?email=...`, `proveedores?nombre=...`, `resenas?productoId=1&clienteId=2`.
+- **Paginación en MongoDB**: agrega `?pagina=1&limite=10` en `proveedores` o `resenas` para recibir `{ total, pagina, limite, paginas, datos }` calculados con `skip` y `limit`.
 
 ### Endpoints adicionales
 
 | Método | Ruta | Motor | Descripción |
 |---|---|---|---|
-| `GET` | `/api/resenas/resumen` | MongoDB | Promedio de calificación y total de reseñas por producto, calculado con el pipeline de agregación de MongoDB (`$match`, `$group`, `$sort`). No toma en cuenta las reseñas con borrado lógico. |
+| `GET` | `/api/resenas/resumen` | MongoDB + MySQL | Promedio de calificación y total de reseñas por producto calculado con agregación de MongoDB (`$match`, `$group`, `$sort`), enriquecido dinámicamente con el nombre del producto consultado en MySQL. Excluye reseñas con borrado lógico. |
 | `POST` | `/api/cupones/:codigo/canjear` | Redis | Canjea un cupón: revisa que siga vigente y lleva la cuenta de usos con `INCR`, que es atómico. Si se alcanzó `usosMaximos`, responde `409`. |
+
+### Validación y capacidades avanzadas en MongoDB (NoSQL)
+
+1. **Validación de esquema con `$jsonSchema`**: A diferencia de bases NoSQL completamente permisivas, se configuraron reglas a nivel de colección para `resenas` y `proveedores`. MongoDB rechaza directamente documentos con tipos incorrectos o fuera de rango (como calificaciones menores a 1 o mayores a 5) respondiendo `400`.
+2. **Integración multibase en tiempo de ejecución**: El resumen de reseñas (`/api/resenas/resumen`) calcula métricas agregadas en MongoDB y obtiene en una sola consulta relacional los nombres de los productos desde MySQL.
+3. **Paginación nativa**: La API soporta paginación con `pagina` y `limite` para evitar sobrecarga de datos en colecciones documentales extensas.
+4. **Índice único sparse para RFC**: En `proveedores`, el campo `rfc` cuenta con un índice único sparse; permite documentos sin RFC gracias a la flexibilidad del esquema, pero evita duplicados si se define (respondiendo `409`).
 
 ### Campos de cada recurso
 

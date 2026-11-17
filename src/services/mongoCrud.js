@@ -39,6 +39,37 @@ function crearControladorMongo({ coleccion, etiqueta, esquema, filtros = {}, val
       for (const [campo, tipo] of Object.entries(filtros)) {
         if (req.query[campo] !== undefined) consulta[campo] = convertidores[tipo](req.query[campo]);
       }
+
+      // Paginación opcional: ?pagina=1&limite=10
+      const tienePaginacion = req.query.pagina !== undefined || req.query.limite !== undefined;
+      if (tienePaginacion) {
+        const pagina = req.query.pagina !== undefined ? Number(req.query.pagina) : 1;
+        const limite = req.query.limite !== undefined ? Number(req.query.limite) : 10;
+
+        if (!Number.isInteger(pagina) || pagina < 1) {
+          throw new HttpError(400, 'El parámetro "pagina" debe ser un entero positivo');
+        }
+        if (!Number.isInteger(limite) || limite < 1 || limite > 100) {
+          throw new HttpError(400, 'El parámetro "limite" debe ser un entero entre 1 y 100');
+        }
+
+        const total = await col().countDocuments(consulta);
+        const docs = await col()
+          .find(consulta)
+          .sort({ creadoEn: 1 })
+          .skip((pagina - 1) * limite)
+          .limit(limite)
+          .toArray();
+
+        return res.json({
+          total,
+          pagina,
+          limite,
+          paginas: Math.ceil(total / limite) || 1,
+          datos: docs.map(formatear)
+        });
+      }
+
       const docs = await col().find(consulta).sort({ creadoEn: 1 }).toArray();
       res.json({ total: docs.length, datos: docs.map(formatear) });
     }),
